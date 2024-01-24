@@ -52,65 +52,87 @@ socket.on('chat-messages', (messagesList) => {
   currentMessages = messagesList
 })
 
-Swal.fire({
-  title: 'Ingresa tu nombre',
-  input: 'text',
-  inputAttributes: {
-    autocapitalize: 'off'
-  },
-  confirmButtonText: 'Enviar',
-  preConfirm: (username) => {
-    // agregar logica
-    if (!username) {
-      Swal.showValidationMessage(
-        `El usuario no puede estar en blanco`
-      )
-      return
-    }
+// Swal.fire({
+//   title: 'Ingresa tu nombre',
+//   input: 'text',
+//   inputAttributes: {
+//     autocapitalize: 'off'
+//   },
+//   confirmButtonText: 'Enviar',
+//   preConfirm: (username) => {
+//     // agregar logica
+//     if (!username) {
+//       Swal.showValidationMessage(
+//         `El usuario no puede estar en blanco`
+//       )
+//       return
+//     }
     
-    return username
-  },
-  allowOutsideClick: false
-}).then(({ value }) => {
-  username = value
+//     return username
+//   },
+//   allowOutsideClick: false
+// }).then(({ value }) => {
+  
+// })
+
+// sacar user de la cookie
+const cookies = parseCookies()
+// cookies[' apellido']
+// cookies.apellido
+
+if (cookies.user) {
+  // username = value
+  username = cookies.user
   socket.emit('user', { user: username, action: true })
-
+  
   // aqui voy a renderizar los mensajes actuales del server
-
+  
   for (const { user, datetime, text } of currentMessages) {
     // renderizar
     appendMessageElement(user, datetime, text)
   }
-
+  
   socket.on('chat-message', ({ user, datetime, text }) => {
     // renderizar el mensaje
     appendMessageElement(user, datetime, text)
   })
-
+  
   socket.on('user', ({ user, action }) => {
     appendUserActionElement(user, action)
   })
-
-
+  
+  
   inputElement.addEventListener('keyup', ({ key, target }) => {
     if (key !== 'Enter') {
       return
     }
-
+  
     const { value } = target
-
+  
     if (!value) {
       return
     }
-
+  
     // enviar el mensaje al socket
     const fecha = new Date()
-
+  
     const msg = { user: username, datetime: fecha.toLocaleTimeString('en-US'), text: value }
-
+  
     socket.emit('chat-message', msg)
     target.value = ""
     appendMessageElement(username, fecha.toLocaleTimeString('en-US'), value)
   })
-})
+}
 
+function parseCookies() {
+  // user=lalo; apellido=ramos
+  return document.cookie
+    .split(';')
+    .reduce((obj, cookie) => {
+      const keyValue = cookie.split('=')
+      return {
+        ...obj,
+        [keyValue[0].trim()]: keyValue[1]
+      }
+    }, {})
+}
